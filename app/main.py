@@ -23,7 +23,7 @@ todos = [
 @app.get("/health")
 def health():
     return {
-        "status": "ok"
+        "status": "ok",
         "version": "1.0.1"
     }
 
