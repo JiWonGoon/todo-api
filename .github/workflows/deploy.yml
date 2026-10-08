@@ -6,13 +6,99 @@ on:
       - main
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+
+  build-and-deploy:
+
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout
+
+      # --------------------------------
+      # 1. Checkout
+      # --------------------------------
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Test
+
+      # --------------------------------
+      # 2. Test
+      # --------------------------------
+      - name: Run tests
+        shell: powershell
         run: |
-          echo "Running tests..."
+          Write-Host "Running tests..."
+
+          # 실제 프로젝트 테스트 명령으로 변경
+          # 예:
+          # python -m pytest
+
+
+      # --------------------------------
+      # 3. Docker Login
+      # --------------------------------
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+
+      # --------------------------------
+      # 4. Docker Build
+      # --------------------------------
+      - name: Build Docker Image
+        shell: powershell
+        run: |
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
+
+          Write-Host "Building image:"
+          Write-Host $IMAGE
+
+          docker build -t $IMAGE .
+
+
+      # --------------------------------
+      # 5. Docker Push
+      # --------------------------------
+      - name: Push Docker Image
+        shell: powershell
+        run: |
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
+
+          Write-Host "Pushing image:"
+          Write-Host $IMAGE
+
+          docker push $IMAGE
+
+
+      # --------------------------------
+      # 6. Kubernetes Deploy
+      # --------------------------------
+      - name: Deploy to Kubernetes
+        shell: powershell
+        run: |
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
+
+          Write-Host "Deploying:"
+          Write-Host $IMAGE
+
+          kubectl set image deployment/todo-api `
+            todo-api=$IMAGE `
+            -n todo
+
+
+      # --------------------------------
+      # 7. Deployment Status
+      # --------------------------------
+      - name: Check Deployment
+        shell: powershell
+        run: |
+          kubectl rollout status deployment/todo-api -n todo
+
+          Write-Host ""
+          Write-Host "Pods:"
+          kubectl get pods -n todo
+
+          Write-Host ""
+          Write-Host "Service:"
+          kubectl get service -n todo
