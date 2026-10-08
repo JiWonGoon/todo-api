@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-api
+  namespace: todo
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: todo-api
+
+  template:
+    metadata:
+      labels:
+        app: todo-api
+
+    spec:
+      containers:
+        - name: todo-api
+
+          image: wongoon/todo-api:1.0
+
+          ports:
+            - containerPort: 8000
+
+          envFrom:
+            - configMapRef:
+                name: todo-config
+
+            - secretRef:
+                name: todo-secret
+
+          volumeMounts:
+            - name: todo-storage
+              mountPath: /data
+
+      volumes:
+        - name: todo-storage
+          persistentVolumeClaim:
+            claimName: todo-pvc
+

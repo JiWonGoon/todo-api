@@ -1,0 +1,7 @@
+.env
+*.secret
+*.key
+node_modules/
+__pycache__/
+.vscode/
+.idea/
