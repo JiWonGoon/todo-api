@@ -24,7 +24,7 @@ todos = [
 def health():
     return {
         "status": "ok",
-        "version": "1.0.2"
+        "version": "1.0.3"
     }
 
 

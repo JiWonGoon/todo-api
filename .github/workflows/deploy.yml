@@ -16,27 +16,14 @@ jobs:
       # --------------------------------
       # 1. Checkout
       # --------------------------------
-      - name: Checkout source code
+      - name: Checkout
         uses: actions/checkout@v4
 
 
       # --------------------------------
-      # 2. Test
+      # 2. Docker Login
       # --------------------------------
-      - name: Run tests
-        shell: powershell
-        run: |
-          Write-Host "Running tests..."
-
-          # 실제 프로젝트 테스트 명령으로 변경
-          # 예:
-          # python -m pytest
-
-
-      # --------------------------------
-      # 3. Docker Login
-      # --------------------------------
-      - name: Login to Docker Hub
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -44,43 +31,34 @@ jobs:
 
 
       # --------------------------------
-      # 4. Docker Build
+      # 3. Docker Build
       # --------------------------------
       - name: Build Docker Image
         shell: powershell
         run: |
-          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
-
-          Write-Host "Building image:"
-          Write-Host $IMAGE
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:${{ github.sha }}"
 
           docker build -t $IMAGE .
 
 
       # --------------------------------
-      # 5. Docker Push
+      # 4. Docker Push
       # --------------------------------
       - name: Push Docker Image
         shell: powershell
         run: |
-          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
-
-          Write-Host "Pushing image:"
-          Write-Host $IMAGE
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:${{ github.sha }}"
 
           docker push $IMAGE
 
 
       # --------------------------------
-      # 6. Kubernetes Deploy
+      # 5. Kubernetes Deploy
       # --------------------------------
       - name: Deploy to Kubernetes
         shell: powershell
         run: |
-          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:latest"
-
-          Write-Host "Deploying:"
-          Write-Host $IMAGE
+          $IMAGE = "${{ secrets.DOCKERHUB_USERNAME }}/todo-api:${{ github.sha }}"
 
           kubectl set image deployment/todo-api `
             todo-api=$IMAGE `
@@ -88,17 +66,19 @@ jobs:
 
 
       # --------------------------------
-      # 7. Deployment Status
+      # 6. Rollout 완료 대기
       # --------------------------------
-      - name: Check Deployment
+      - name: Wait for Rollout
         shell: powershell
         run: |
           kubectl rollout status deployment/todo-api -n todo
 
-          Write-Host ""
-          Write-Host "Pods:"
-          kubectl get pods -n todo
 
-          Write-Host ""
-          Write-Host "Service:"
+      # --------------------------------
+      # 7. Deployment Status
+      # --------------------------------
+      - name: Check Kubernetes
+        shell: powershell
+        run: |
+          kubectl get pods -n todo
           kubectl get service -n todo
